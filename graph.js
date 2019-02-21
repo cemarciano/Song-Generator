@@ -59,6 +59,7 @@ function createNetwork(){
 		edges: edges
 	};
 	network = new vis.Network(container, data, options);
+	network.moveTo({scale: 1.4});
 	// Updates who is sink:
 	_updateSinks();
 	// Initializes sound files:
@@ -155,7 +156,7 @@ function _initializeSongs(){
 	// Initializes music:
 	nodes.forEach(function(item){
 		music[item.id] = new Howl({
-			src: ['chords/' + item.id + '.wav'],
+			src: ['chords/' + item.id + '.mp3'],
 			autoplay: false,
 			loop: false,
 			preload: true
@@ -165,14 +166,19 @@ function _initializeSongs(){
 
 // Play sound files associated with sinks:
 function _playSongs(){
-	// Stops all sounds:
+	// Stops all current sounds:
 	music.forEach(function(item){
-		item.stop();
+		if (item.playing() == true){
+			console.log(item);
+			item.once( 'fade', () => { item.stop(); });
+			item.fade(1, 0, 200);
+		}
 	});
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
 			music[item.id].play();
+			music[item.id].fade(0, 1, 200);
 		}
 	});
 }
