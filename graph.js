@@ -1,37 +1,3 @@
-// create an array with nodes
-var nodes = new vis.DataSet([
-	{id: 1, label: '1'},
-	{id: 2, label: '2'},
-	{id: 3, label: '3'},
-	{id: 4, label: '4'},
-	{id: 5, label: '5'},
-	{id: 6, label: '6'},
-	{id: 7, label: '7'},
-	{id: 8, label: '8'},
-	{id: 9, label: '9'},
-	{id: 10, label: '10'}
-]);
-
-
-// create an array with edges
-var edges = new vis.DataSet([
-	{from: 2, to: 1},
-	{from: 6, to: 1},
-	{from: 9, to: 1},
-	{from: 3, to: 2},
-	{from: 10, to: 2},
-	{from: 7, to: 3},
-	{from: 4, to: 3},
-	{from: 9, to: 4},
-	{from: 5, to: 4},
-	{from: 6, to: 5},
-	{from: 10, to: 5},
-	{from: 7, to: 6},
-	{from: 8, to: 7},
-	{from: 9, to: 8},
-	{from: 10, to: 8}
-]);
-
 var network, data;
 var options = {
 	layout:{randomSeed:30},
@@ -43,6 +9,53 @@ var sinkColor = "#000000";
 var sinkFontColor = "#ffffff";
 var container;
 var music = [];
+var musicFadeOut = 400;
+
+
+// create an array with nodes
+var nodes = new vis.DataSet([
+	{id: 1, label: '1', x: 260, y: 0},
+	{id: 2, label: '2', x: 130, y: -150},
+	{id: 3, label: '3', x: 0, y: -150},
+	{id: 4, label: '4', x: -130, y: -150},
+	{id: 5, label: '5', x: -260, y: -150},
+	{id: 6, label: '6', x: -130, y: 0},
+	{id: 7, label: '7', x: -260, y: 0},
+	{id: 8, label: '8', x: -260, y: 150},
+	{id: 9, label: '9', x: -130, y: 150},
+	{id: 10, label: '10', x: 0, y: 150},
+	{id: 11, label: '11', x: 130, y: 150},
+	{id: 12, label: '12', x: 0, y: 250},
+	{id: 13, label: '13', x: 130, y: 0},
+	{id: 14, label: '14', x: 260, y: -150}
+]);
+
+
+// create an array with edges
+var edges = new vis.DataSet([
+	{from: 2, to: 1},
+	{from: 13, to: 1},
+	{from: 11, to: 1},
+	{from: 14, to: 1},
+	{from: 3, to: 2},
+	{from: 13, to: 3},
+	{from: 6, to: 3},
+	{from: 4, to: 3},
+	{from: 6, to: 4},
+	{from: 5, to: 4},
+	{from: 6, to: 5},
+	{from: 7, to: 5},
+	{from: 7, to: 6},
+	{from: 9, to: 6},
+	{from: 8, to: 7},
+	{from: 9, to: 8},
+	{from: 10, to: 9},
+	{from: 12, to: 10},
+	{from: 11, to: 10}
+
+]);
+
+
 
 
 // Startup function:
@@ -171,14 +184,14 @@ function _playSongs(){
 		if (item.playing() == true){
 			console.log(item);
 			item.once( 'fade', () => { item.stop(); });
-			item.fade(1, 0, 200);
+			item.fade(1, 0, musicFadeOut);
 		}
 	});
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
 			music[item.id].play();
-			music[item.id].fade(0, 1, 200);
+			music[item.id].fade(0, 1, musicFadeOut);
 		}
 	});
 }
