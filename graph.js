@@ -42,6 +42,7 @@ var nodeFontColor = "#000000";
 var sinkColor = "#000000";
 var sinkFontColor = "#ffffff";
 var container;
+var music = [];
 
 
 // Startup function:
@@ -60,8 +61,12 @@ function createNetwork(){
 	network = new vis.Network(container, data, options);
 	// Updates who is sink:
 	_updateSinks();
+	// Initializes sound files:
+	_initializeSongs();
 	// Updates colors of nodes:
 	_updateColors();
+	// Play first sound track:
+	_playSongs();
 
 	network.on("click", function (params) {
 		runSER();
@@ -82,6 +87,7 @@ function runSER(){
 	// Recalculates who is sink:
 	_updateSinks();
 	_updateColors();
+	_playSongs();
 }
 
 
@@ -132,7 +138,6 @@ function _updateColors(){
 			item.color.border = nodeFontColor;
 			item.font = {};
 			item.font.color = sinkFontColor;
-			item.sink = true;
 			nodes.update(item);
 		} else {
 			item.color = {};
@@ -140,8 +145,34 @@ function _updateColors(){
 			item.color.border = nodeFontColor;
 			item.font = {};
 			item.font.color = nodeFontColor;
-			item.sink = true;
 			nodes.update(item);
+		}
+	});
+}
+
+// Initializes sound files:
+function _initializeSongs(){
+	// Initializes music:
+	nodes.forEach(function(item){
+		music[item.id] = new Howl({
+			src: ['chords/' + item.id + '.wav'],
+			autoplay: false,
+			loop: false,
+			preload: true
+		});
+	});
+}
+
+// Play sound files associated with sinks:
+function _playSongs(){
+	// Stops all sounds:
+	music.forEach(function(item){
+		item.stop();
+	});
+	// Play sound of sinks:
+	nodes.forEach(function(item){
+		if (item.sink == true){
+			music[item.id].play();
 		}
 	});
 }
