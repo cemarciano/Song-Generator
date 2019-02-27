@@ -9,49 +9,55 @@ var sinkColor = "#000000";
 var sinkFontColor = "#ffffff";
 var container;
 var music = [];
+var backing;
 var musicFadeOut = 400;
 
+// Variables for visual placement of nodes:
+var rowDist = 110;
+var colDist = 130;
+var transitSpacing = 30;
 
 // create an array with nodes
 var nodes = new vis.DataSet([
-	{id: 1, label: '1', x: 260, y: 0},
-	{id: 2, label: '2', x: 130, y: -150},
-	{id: 3, label: '3', x: 0, y: -150},
-	{id: 4, label: '4', x: -130, y: -150},
-	{id: 5, label: '5', x: -260, y: -150},
-	{id: 6, label: '6', x: -130, y: 0},
-	{id: 7, label: '7', x: -260, y: 0},
-	{id: 8, label: '8', x: -260, y: 150},
-	{id: 9, label: '9', x: -130, y: 150},
-	{id: 10, label: '10', x: 0, y: 150},
-	{id: 11, label: '11', x: 130, y: 150},
-	{id: 12, label: '12', x: 0, y: 250},
-	{id: 13, label: '13', x: 130, y: 0},
-	{id: 14, label: '14', x: 260, y: -150}
+	{id: 1, label: '1', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01"},
+	{id: 2, label: '2', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01"},
+	{id: 3, label: '3', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02"},
+	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq02"},
+	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"antec01"},
+	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist},
+	{id: 7, label: '7', x: 0, y: rowDist},
+	{id: 8, label: '8', x: colDist + transitSpacing, y: rowDist},
+	{id: 9, label: '9', x: 2*colDist + transitSpacing, y: rowDist+50},
+	{id: 10, label: '10', x: 2*colDist + transitSpacing, y: rowDist-50},
+	{id: 11, label: '11', x: 3*colDist + transitSpacing, y: rowDist},
+	{id: 12, label: '12', x: 3*colDist + transitSpacing, y: -rowDist+80},
+	{id: 13, label: '13', x: 2*colDist + transitSpacing, y: -rowDist},
+	{id: 14, label: '14', x: colDist + transitSpacing, y: -rowDist},
+	{id: 15, label: '15', x: 0, y: -rowDist}
 ]);
 
 
 // create an array with edges
 var edges = new vis.DataSet([
+	{from: 15, to: 1},
 	{from: 2, to: 1},
-	{from: 13, to: 1},
-	{from: 11, to: 1},
-	{from: 14, to: 1},
+	{from: 5, to: 1},
 	{from: 3, to: 2},
-	{from: 13, to: 3},
-	{from: 6, to: 3},
+	{from: 6, to: 2},
 	{from: 4, to: 3},
-	{from: 6, to: 4},
-	{from: 5, to: 4},
+	{from: 5, to: 3},
 	{from: 6, to: 5},
-	{from: 7, to: 5},
 	{from: 7, to: 6},
-	{from: 9, to: 6},
 	{from: 8, to: 7},
 	{from: 9, to: 8},
-	{from: 10, to: 9},
-	{from: 12, to: 10},
-	{from: 11, to: 10}
+	{from: 10, to: 8},
+	{from: 11, to: 9},
+	{from: 11, to: 10},
+	{from: 12, to: 11},
+	{from: 13, to: 11},
+	{from: 14, to: 12},
+	{from: 14, to: 13},
+	{from: 15, to: 14}
 
 ]);
 
@@ -79,11 +85,17 @@ function createNetwork(){
 	_initializeSongs();
 	// Updates colors of nodes:
 	_updateColors();
-	// Play first sound track:
-	_playSongs();
 
-	network.on("click", function (params) {
-		runSER();
+	// Play first sound track:
+	backing.on("load", function(){
+
+
+		setTimeout(function(){
+			_playSongs();
+			setInterval(function(){
+				runSER();
+			},4800);
+		}, 1000);
 	});
 
 }
@@ -103,6 +115,8 @@ function runSER(){
 	_updateColors();
 	_playSongs();
 }
+
+
 
 
 // Performs edge-reversal on node with id *sink*:
@@ -166,32 +180,39 @@ function _updateColors(){
 
 // Initializes sound files:
 function _initializeSongs(){
-	// Initializes music:
+	// Initializes node music:
 	nodes.forEach(function(item){
 		music[item.id] = new Howl({
-			src: ['chords/' + item.id + '.mp3'],
+			src: ['phrases/' + item.file + '.mp3'],
 			autoplay: false,
 			loop: false,
 			preload: true
 		});
 	});
+	// Initializes backing track:
+	backing = new Howl({
+		src: ['phrases/backing.mp3'],
+		autoplay: false,
+		loop: true,
+		preload: true,
+		volume: 0.55
+	});
 }
+
+
 
 // Play sound files associated with sinks:
 function _playSongs(){
-	// Stops all current sounds:
-	music.forEach(function(item){
-		if (item.playing() == true){
-			console.log(item);
-			item.once( 'fade', () => { item.stop(); });
-			item.fade(1, 0, musicFadeOut);
-		}
-	});
+	// If backing is not playing, play it:
+	if (backing.playing() == false){
+		backing.play();
+	}
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
 			music[item.id].play();
-			music[item.id].fade(0, 1, musicFadeOut);
+			if (item.id != 1){
+			}
 		}
 	});
 }
