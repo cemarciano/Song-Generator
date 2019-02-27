@@ -1,21 +1,25 @@
 var network, data;
+var windowInterval;
 var options = {
 	layout:{randomSeed:30},
 	physics: {enabled: false}
 };
-var nodeColor = "#ffffff";
-var nodeFontColor = "#000000";
-var sinkColor = "#000000";
-var sinkFontColor = "#ffffff";
-var container;
-var music = [];
-var backing;
-var musicFadeOut = 400;
+var nodeColor = "#ffffff";			// Background color of non-sink nodes
+var nodeFontColor = "#000000";		// Font color of non-sink nodes
+var sinkColor = "#000000";			// Background color of sink nodes
+var sinkFontColor = "#ffffff";		// Font color of sink nodes
+var container;						// Network DOM object
+var music = [];						// Music object for each node
+var backing;						// Backing track object
+var musicFadeOut = 400;				// Music fade (ms)
+var serInterval = 4780;				// Waiting interval before next edge reversal (ms)
+var poliphonyVolume = 0.28;			// Volume for poliphony tracks
+var songsLoaded = 0;				// Counter of how many tracks have been loaded
 
 // Variables for visual placement of nodes:
-var rowDist = 110;
-var colDist = 130;
-var transitSpacing = 30;
+var rowDist = 110;				// Distance between rows
+var colDist = 130;				// Distance between columns
+var transitSpacing = 30;		// Extra distance from central transitional nodes
 
 // create an array with nodes
 var nodes = new vis.DataSet([
@@ -23,8 +27,8 @@ var nodes = new vis.DataSet([
 	{id: 2, label: '2', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01"},
 	{id: 3, label: '3', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02"},
 	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq02"},
-	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"antec01"},
-	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist},
+	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq03"},
+	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist, file:"antec03"},
 	{id: 7, label: '7', x: 0, y: rowDist},
 	{id: 8, label: '8', x: colDist + transitSpacing, y: rowDist},
 	{id: 9, label: '9', x: 2*colDist + transitSpacing, y: rowDist+50},
@@ -86,19 +90,26 @@ function createNetwork(){
 	// Updates colors of nodes:
 	_updateColors();
 
-	// Play first sound track:
-	backing.on("load", function(){
+	// Only start system after everything has loaded:
+	windowInterval = setInterval(function(){
+		if (songsLoaded == 6){
+			// Remove interval:
+			clearInterval(windowInterval);
+			// Removes loading screen:
+			document.getElementById('loading-screen').remove();
+			// Perform first round of SER and play first songs:
+			setTimeout(function(){
+				_playSongs();
+				setInterval(function(){
+					runSER();
+				},serInterval);
+			}, 700);
+		}
+	}, 1000);
 
-
-		setTimeout(function(){
-			_playSongs();
-			setInterval(function(){
-				runSER();
-			},4800);
-		}, 1000);
-	});
 
 }
+
 
 // Function to perform a synchronous round of SER:
 function runSER(){
@@ -188,6 +199,12 @@ function _initializeSongs(){
 			loop: false,
 			preload: true
 		});
+		// Let us know when it loads:
+		music[item.id].once("load", function(){
+			// Increments the counter of total songs loaded:
+			songsLoaded++;
+			console.log(songsLoaded);
+		});
 	});
 	// Initializes backing track:
 	backing = new Howl({
@@ -196,6 +213,12 @@ function _initializeSongs(){
 		loop: true,
 		preload: true,
 		volume: 0.55
+	});
+	// Let us know when it loads:
+	backing.once("load", function(){
+		// Increments the counter of total songs loaded:
+		songsLoaded++;
+		console.log(songsLoaded);
 	});
 }
 
@@ -207,11 +230,18 @@ function _playSongs(){
 	if (backing.playing() == false){
 		backing.play();
 	}
+	var firstPlayed = true;
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
 			music[item.id].play();
-			if (item.id != 1){
+			// If this is the first sink playing in this orientation:
+			if (firstPlayed){
+				// Make it stand out:
+				music[item.id].volume(1);
+				firstPlayed = false;
+			} else {
+				music[item.id].volume(poliphonyVolume);
 			}
 		}
 	});
