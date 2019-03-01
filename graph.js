@@ -103,7 +103,7 @@ function createNetwork(){
 				setInterval(function(){
 					runSER();
 				},serInterval);
-			}, 1500);
+			}, 700);
 		}
 	}, 1000);
 
@@ -247,4 +247,6 @@ function _playSongs(){
 	});
 }
 
-createNetwork();
+window.onload = function(){
+	createNetwork();
+}
