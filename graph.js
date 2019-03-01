@@ -103,7 +103,7 @@ function createNetwork(){
 				setInterval(function(){
 					runSER();
 				},serInterval);
-			}, 700);
+			}, 1500);
 		}
 	}, 1000);
 
