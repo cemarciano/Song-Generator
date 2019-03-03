@@ -95,19 +95,34 @@ function createNetwork(){
 		if (songsLoaded == 6){
 			// Remove interval:
 			clearInterval(windowInterval);
-			// Removes loading screen:
-			document.getElementById('loading-screen').remove();
-			// Perform first round of SER and play first songs:
-			setTimeout(function(){
-				_playSongs();
-				setInterval(function(){
-					runSER();
-				},serInterval);
-			}, 700);
+			// Creates play button:
+			var playButton = document.createElement('div');
+			playButton.className = "btn";
+			playButton.innerHTML = "Play";
+			playButton.onclick = play;
+			// Fetches loading screen:
+			var loadingScreen = document.getElementById('loading-screen');
+			// Removes Loading... text:
+			loadingScreen.innerHTML = "";
+			// Appends play button:
+			loadingScreen.appendChild(playButton);
 		}
 	}, 1000);
 
 
+}
+
+
+function play(){
+	// Removes loading screen:
+	document.getElementById('loading-screen').remove();
+	// Perform first round of SER and play first songs:
+	setTimeout(function(){
+		_playSongs();
+		setInterval(function(){
+			runSER();
+		},serInterval);
+	}, 700);
 }
 
 

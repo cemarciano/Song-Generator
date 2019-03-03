@@ -14,6 +14,9 @@
 	user-select: none;
 }
 
+
+/* Loading screen */
+
 #loading-screen {
 	z-index: 200;
 	position: fixed;
@@ -26,13 +29,45 @@
     background:rgba(255,255,255,0.91);
 	text-align: center;
 	display: table-cell;
-vertical-align: middle;
+	vertical-align: middle;
 }
 
 #loading-screen span {
-	position: relative;
+	position: absolute;
+	float: center;
 	top: 43%;
+	left: 46%;
 	font-size: 40pt;
 	font-family: Calibri;
 	user-select: none;
+}
+
+
+/* Blue button */
+
+
+.btn {
+	position: absolute;
+	display: inline-block;
+	top: 43.5%;
+	left: 46.5%;
+	cursor: pointer;
+	border-radius: 7px;
+	text-decoration: none;
+	padding: 0.5% 2.6%;
+	font-family: Calibri, Verdana;
+	font-size: 28pt;
+	transition: .3s;
+	margin-top: -5px;
+	margin-left: 13px;
+	margin-right: 13px;
+	color: #55acee;
+	white-space: nowrap;
+	border: 1.4px #55acee solid;
+}
+
+
+.btn:hover {
+	background-color: #55acee;
+	color: #fff;
 }
