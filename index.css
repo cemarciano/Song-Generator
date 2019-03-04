@@ -32,11 +32,13 @@
 	vertical-align: middle;
 }
 
-#loading-screen span {
-	position: absolute;
+#loading-screen div {
+	position: relative;
 	float: center;
 	top: 43%;
-	left: 46%;
+}
+
+#loading-screen span {
 	font-size: 40pt;
 	font-family: Calibri;
 	user-select: none;
@@ -47,10 +49,10 @@
 
 
 .btn {
-	position: absolute;
-	display: inline-block;
-	top: 43.5%;
-	left: 46.5%;
+	position: relative;
+	float: center;
+	left: 43%;
+	max-width: 7%;
 	cursor: pointer;
 	border-radius: 7px;
 	text-decoration: none;

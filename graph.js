@@ -92,6 +92,8 @@ function createNetwork(){
 
 	// Only start system after everything has loaded:
 	windowInterval = setInterval(function(){
+		// Updates songs loaded visual count:
+		document.getElementById("songs-loaded").innerHTML = songsLoaded;
 		if (songsLoaded == 6){
 			// Remove interval:
 			clearInterval(windowInterval);
@@ -107,7 +109,7 @@ function createNetwork(){
 			// Appends play button:
 			loadingScreen.appendChild(playButton);
 		}
-	}, 1000);
+	}, 200);
 
 
 }
