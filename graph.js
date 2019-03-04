@@ -1,5 +1,4 @@
 var network, data;
-var windowInterval;
 var options = {
 	layout:{randomSeed:30},
 	physics: {enabled: false}
@@ -89,27 +88,6 @@ function createNetwork(){
 	_initializeSongs();
 	// Updates colors of nodes:
 	_updateColors();
-
-	// Only start system after everything has loaded:
-	windowInterval = setInterval(function(){
-		// Updates songs loaded visual count:
-		document.getElementById("songs-loaded").innerHTML = songsLoaded;
-		if (songsLoaded == 6){
-			// Remove interval:
-			clearInterval(windowInterval);
-			// Creates play button:
-			var playButton = document.createElement('div');
-			playButton.className = "btn";
-			playButton.innerHTML = "Play";
-			playButton.onclick = play;
-			// Fetches loading screen:
-			var loadingScreen = document.getElementById('loading-screen');
-			// Removes Loading... text:
-			loadingScreen.innerHTML = "";
-			// Appends play button:
-			loadingScreen.appendChild(playButton);
-		}
-	}, 200);
 
 
 }
@@ -219,8 +197,7 @@ function _initializeSongs(){
 		// Let us know when it loads:
 		music[item.id].once("load", function(){
 			// Increments the counter of total songs loaded:
-			songsLoaded++;
-			console.log(songsLoaded);
+			_incrementSongsLoaded();
 		});
 	});
 	// Initializes backing track:
@@ -234,11 +211,34 @@ function _initializeSongs(){
 	// Let us know when it loads:
 	backing.once("load", function(){
 		// Increments the counter of total songs loaded:
-		songsLoaded++;
-		console.log(songsLoaded);
+		_incrementSongsLoaded();
 	});
 }
 
+
+function _incrementSongsLoaded(){
+	// Increments the counter of total songs loaded:
+	songsLoaded++;
+	// Updates songs loaded visual count:
+	document.getElementById("songs-loaded").innerHTML = songsLoaded;
+	// Checks if all songs have been loaded:
+	if (songsLoaded == 6){
+		// Display Play button after a few seconds:
+		setTimeout(function(){
+			// Creates play button:
+			var playButton = document.createElement('div');
+			playButton.className = "btn";
+			playButton.innerHTML = "Play";
+			playButton.onclick = play;
+			// Fetches loading screen:
+			var loadingScreen = document.getElementById('loading-screen');
+			// Removes Loading... text:
+			loadingScreen.innerHTML = "";
+			// Appends play button:
+			loadingScreen.appendChild(playButton);
+		}, 900);
+	}
+}
 
 
 // Play sound files associated with sinks:
