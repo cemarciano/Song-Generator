@@ -11,8 +11,8 @@ var container;						// Network DOM object
 var music = [];						// Music object for each node
 var backing;						// Backing track object
 var musicFadeOut = 400;				// Music fade (ms)
-var serInterval = 4780;				// Waiting interval before next edge reversal (ms)
-var poliphonyVolume = 0.28;			// Volume for poliphony tracks
+var serInterval = 4815;				// Waiting interval before next edge reversal (ms)
+var poliphonyVolume = 0.55;			// Volume for poliphony tracks
 var songsLoaded = 0;				// Counter of how many tracks have been loaded
 
 // Variables for visual placement of nodes:
@@ -20,20 +20,20 @@ var rowDist = 110;				// Distance between rows
 var colDist = 130;				// Distance between columns
 var transitSpacing = 30;		// Extra distance from central transitional nodes
 
-// create an array with nodes
+// create an array with nodes (offset measured in seconds)
 var nodes = new vis.DataSet([
-	{id: 1, label: '1', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01"},
-	{id: 2, label: '2', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01"},
-	{id: 3, label: '3', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02"},
-	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq02"},
-	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq03"},
-	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist, file:"antec03"},
+	{id: 1, label: '1', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", offset: -0.6},
+	{id: 2, label: '2', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01", offset: -0.33},
+	{id: 3, label: '3', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02", offset: -1},
+	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq03", offset: -2.45},
+	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq02", offset: -3.6},
+	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist, file:"antec03", offset: -2.7},
 	{id: 7, label: '7', x: 0, y: rowDist},
 	{id: 8, label: '8', x: colDist + transitSpacing, y: rowDist},
 	{id: 9, label: '9', x: 2*colDist + transitSpacing, y: rowDist+55},
 	{id: 10, label: '10', x: 2*colDist + transitSpacing, y: rowDist-55},
 	{id: 11, label: '11', x: 3*colDist + transitSpacing, y: rowDist},
-	{id: 12, label: '12', x: 3*colDist + transitSpacing, y: -rowDist+80},
+	{id: 12, label: '12', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"conseq01", offset: -0.33},
 	{id: 13, label: '13', x: 2*colDist + transitSpacing, y: -rowDist},
 	{id: 14, label: '14', x: colDist + transitSpacing, y: -rowDist},
 	{id: 15, label: '15', x: 0, y: -rowDist}
@@ -205,8 +205,7 @@ function _initializeSongs(){
 		src: ['phrases/backing.mp3'],
 		autoplay: false,
 		loop: true,
-		preload: true,
-		volume: 0.55
+		preload: true
 	});
 	// Let us know when it loads:
 	backing.once("load", function(){
@@ -222,7 +221,7 @@ function _incrementSongsLoaded(){
 	// Updates songs loaded visual count:
 	document.getElementById("songs-loaded").innerHTML = songsLoaded;
 	// Checks if all songs have been loaded:
-	if (songsLoaded == 6){
+	if (songsLoaded == 4){
 		// Display Play button after a few seconds:
 		setTimeout(function(){
 			// Creates play button:
@@ -247,15 +246,24 @@ function _playSongs(){
 	if (backing.playing() == false){
 		backing.play();
 	}
-	var firstPlayed = true;
+	let firstPlayed = true;
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
-			music[item.id].play();
+			// Checks is offset is positive (should play after a while){
+			if (item.offset >=0){
+				setTimeout(function(){
+					music[item.id].play();
+				}, item.offset*1000);
+			// If offset is negative, seek and play:
+			} else {
+				music[item.id].seek(-1*item.offset);
+				music[item.id].play();
+			}
 			// If this is the first sink playing in this orientation:
 			if (firstPlayed){
 				// Make it stand out:
-				music[item.id].volume(1);
+				music[item.id].volume(0.9);
 				firstPlayed = false;
 			} else {
 				music[item.id].volume(poliphonyVolume);
