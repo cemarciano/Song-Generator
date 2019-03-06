@@ -12,11 +12,14 @@ var music = [];							// Music object for each node
 var backings = [undefined,undefined];	// Array of backing tracks
 var backing;							// Backing track object
 var musicFadeOut = 400;					// Music fade (ms)
-var serInterval = 4815;					// Waiting interval before next edge reversal (ms)
+var serInterval = 4.815;				// Waiting interval before next edge reversal (ms)
 var poliphonyVolume = 0.55;				// Volume for poliphony tracks
 var phraseVolume = 0.9;					// Volume for single phrases
 var backingVolume = 1;					// Volume for backing track
 var songsLoaded = 0;					// Counter of how many tracks have been loaded
+var currentGenre = 1;					// Starting genre. 1 is blues, 2 is jazz
+var currentPhrase = 0;					// Keeps track of which phrase is playing within a genre
+var playingNodes = [];					// Array of indexes of nodes being played;
 
 // Variables for visual placement of nodes:
 var rowDist = 110;				// Distance between rows
@@ -101,21 +104,65 @@ function play(){
 	document.getElementById('loading-screen').remove();
 	// Perform first round of SER and play first songs:
 	setTimeout(function(){
-		_playSongs();
-		setInterval(function(){
-			runSER();
-		},serInterval);
+		requestAnimationFrame(fire);
 	}, 700);
 }
 
+function fire(){
+	// Checks if next iteration of SER should occur:
+	if(backings[currentGenre].seek() >= serInterval*currentPhrase){
+		console.log("REVERTING! Seek is " + backings[1].seek());
+		// Checks if this is the first time running:
+		if (currentPhrase == 0){
+			// Run next round of SER without reverting edges:
+			runSER(true);
+		} else {
+			// Run next round of SER:
+			runSER(false);
+		}
+		// Increment current phrase count:
+		currentPhrase++;
+	}
+	requestAnimationFrame(fire);
+}
+
+
+// Resumes execution of backing track when this window becomes active:
+window.addEventListener('focus', function(){
+	if (currentPhrase > 0){
+		// Checks if backing track was previously active:
+		if (backings[currentGenre].seek() != 0){
+			// Plays backing track:
+			backings[currentGenre].play();
+		}
+		// Plays phrases:
+		playingNodes.forEach(function(index){
+			music[index].play();
+		});
+		// Resume dynamic:
+		requestAnimationFrame(fire);
+	}
+});
+// Stops execution of backing track when this window becomes inactive:
+window.addEventListener('blur', function(){
+	if (currentPhrase > 0){
+		// Pauses backing track:
+		backings[currentGenre].pause();
+		// Pauses phrases:
+		playingNodes.forEach(function(index){
+			music[index].pause();
+		});
+	}
+});
+
 
 // Function to perform a synchronous round of SER:
-function runSER(){
+function runSER(firstReversal){
 	// Recalculates who is sink:
 	_updateSinks();
 	// Performs edge reversal of all sinks:
 	let sinks = nodes.forEach(function(item){
-		if (item.sink == true){
+		if ((item.sink == true) && (firstReversal == false)){
 			_revertEdge(item.id);
 		}
 	});
@@ -220,8 +267,6 @@ function _initializeSongs(){
 			backings[currentGenre].stop();
 		});
 	}
-	// Selects a genre to be the first (in our example, blues):
-	currentGenre = 1;
 }
 
 
@@ -258,6 +303,8 @@ function _playSongs(){
 		backings[currentGenre].volume(backingVolume);
 		backings[currentGenre].play();
 	}
+	// Resets id of nodes being played:
+	playingNodes = [];
 	let firstPlayed = true;
 	// Play sound of sinks:
 	nodes.forEach(function(item){
@@ -265,6 +312,7 @@ function _playSongs(){
 			// Seek and play according to offset:
 			music[item.id].seek(-1*item.offset);
 			music[item.id].play();
+			playingNodes.push(item.id);
 			// If this is the first sink playing in this orientation:
 			if (firstPlayed){
 				// Make it stand out:
