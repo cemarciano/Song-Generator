@@ -3,17 +3,20 @@ var options = {
 	layout:{randomSeed:30},
 	physics: {enabled: false}
 };
-var nodeColor = "#ffffff";			// Background color of non-sink nodes
-var nodeFontColor = "#000000";		// Font color of non-sink nodes
-var sinkColor = "#000000";			// Background color of sink nodes
-var sinkFontColor = "#ffffff";		// Font color of sink nodes
-var container;						// Network DOM object
-var music = [];						// Music object for each node
-var backing;						// Backing track object
-var musicFadeOut = 400;				// Music fade (ms)
-var serInterval = 4815;				// Waiting interval before next edge reversal (ms)
-var poliphonyVolume = 0.55;			// Volume for poliphony tracks
-var songsLoaded = 0;				// Counter of how many tracks have been loaded
+var nodeColor = "#ffffff";				// Background color of non-sink nodes
+var nodeFontColor = "#000000";			// Font color of non-sink nodes
+var sinkColor = "#000000";				// Background color of sink nodes
+var sinkFontColor = "#ffffff";			// Font color of sink nodes
+var container;							// Network DOM object
+var music = [];							// Music object for each node
+var backings = [undefined,undefined];	// Array of backing tracks
+var backing;							// Backing track object
+var musicFadeOut = 400;					// Music fade (ms)
+var serInterval = 4815;					// Waiting interval before next edge reversal (ms)
+var poliphonyVolume = 0.55;				// Volume for poliphony tracks
+var phraseVolume = 0.9;					// Volume for single phrases
+var backingVolume = 1;					// Volume for backing track
+var songsLoaded = 0;					// Counter of how many tracks have been loaded
 
 // Variables for visual placement of nodes:
 var rowDist = 110;				// Distance between rows
@@ -28,7 +31,7 @@ var nodes = new vis.DataSet([
 	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq03", offset: -2.45},
 	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq02", offset: -3.6},
 	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist, file:"antec03", offset: -2.7},
-	{id: 7, label: '7', x: 0, y: rowDist},
+	{id: 7, label: '7', x: 0, y: rowDist, transitional: true, file:"trans01", offset: -1.4},
 	{id: 8, label: '8', x: colDist + transitSpacing, y: rowDist},
 	{id: 9, label: '9', x: 2*colDist + transitSpacing, y: rowDist+55},
 	{id: 10, label: '10', x: 2*colDist + transitSpacing, y: rowDist-55},
@@ -36,7 +39,7 @@ var nodes = new vis.DataSet([
 	{id: 12, label: '12', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"conseq01", offset: -0.33},
 	{id: 13, label: '13', x: 2*colDist + transitSpacing, y: -rowDist},
 	{id: 14, label: '14', x: colDist + transitSpacing, y: -rowDist},
-	{id: 15, label: '15', x: 0, y: -rowDist}
+	{id: 15, label: '15', x: 0, y: -rowDist, transitional: true}
 ]);
 
 
@@ -200,18 +203,25 @@ function _initializeSongs(){
 			_incrementSongsLoaded();
 		});
 	});
-	// Initializes backing track:
-	backing = new Howl({
-		src: ['phrases/backing.mp3'],
-		autoplay: false,
-		loop: true,
-		preload: true
-	});
-	// Let us know when it loads:
-	backing.once("load", function(){
-		// Increments the counter of total songs loaded:
-		_incrementSongsLoaded();
-	});
+	// Initializes backing tracks:
+	for (let i=1; i<=2; i++){
+		backings[i] = new Howl({
+			src: ['phrases/backing0'+i+'.mp3'],
+			autoplay: false,
+			loop: true,
+			preload: true
+		});
+		// Let us know when it loads:
+		backings[i].once("load", function(){
+			// Increments the counter of total songs loaded:
+			_incrementSongsLoaded();
+		});
+		backings[i].on("fade", function(){
+			backings[currentGenre].stop();
+		});
+	}
+	// Selects a genre to be the first (in our example, blues):
+	currentGenre = 1;
 }
 
 
@@ -221,7 +231,7 @@ function _incrementSongsLoaded(){
 	// Updates songs loaded visual count:
 	document.getElementById("songs-loaded").innerHTML = songsLoaded;
 	// Checks if all songs have been loaded:
-	if (songsLoaded == 4){
+	if (songsLoaded == 10){
 		// Display Play button after a few seconds:
 		setTimeout(function(){
 			// Creates play button:
@@ -242,34 +252,50 @@ function _incrementSongsLoaded(){
 
 // Play sound files associated with sinks:
 function _playSongs(){
+	console.log("My genre is "+currentGenre+" and playing is "+backings[currentGenre].playing());
 	// If backing is not playing, play it:
-	if (backing.playing() == false){
-		backing.play();
+	if (backings[currentGenre].playing() == false){
+		backings[currentGenre].volume(backingVolume);
+		backings[currentGenre].play();
 	}
 	let firstPlayed = true;
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
-			// Checks is offset is positive (should play after a while){
-			if (item.offset >=0){
-				setTimeout(function(){
-					music[item.id].play();
-				}, item.offset*1000);
-			// If offset is negative, seek and play:
-			} else {
-				music[item.id].seek(-1*item.offset);
-				music[item.id].play();
-			}
+			// Seek and play according to offset:
+			music[item.id].seek(-1*item.offset);
+			music[item.id].play();
 			// If this is the first sink playing in this orientation:
 			if (firstPlayed){
 				// Make it stand out:
-				music[item.id].volume(0.9);
+				music[item.id].volume(phraseVolume);
 				firstPlayed = false;
 			} else {
 				music[item.id].volume(poliphonyVolume);
 			}
+			// If this is a transitional node, switch genres:
+			if (item.transitional == true){
+				// Stop previous backing track:
+				backings[currentGenre].fade(backingVolume, 0, 200);
+				// Switch genres:
+				_switchGenre();
+			}
 		}
 	});
+}
+
+// Switches between genres. Blues is 1, jazz is 2:
+function _switchGenre(){
+	console.log("Swtiching from genre " + currentGenre);
+	// Checks if current genre is blues:
+	if (currentGenre == 1){
+		// Switches to jazz:
+		currentGenre = 2;
+	} else {
+		// Switches to blues:
+		currentGenre = 1;
+	}
+	console.log("Now Im at genre "+ currentGenre);
 }
 
 window.onload = function(){
