@@ -18,8 +18,9 @@ var phraseVolume = 0.9;					// Volume for single phrases
 var backingVolume = 1;					// Volume for backing track
 var songsLoaded = 0;					// Counter of how many tracks have been loaded
 var currentGenre = 1;					// Starting genre. 1 is blues, 2 is jazz
-var currentPhrase = 0;					// Keeps track of which phrase is playing within a genre
+var serIterations = 0;					// Gets incremented by 1 everytime SER iterates
 var playingNodes = [];					// Array of indexes of nodes being played;
+var isTransitioning = false;			// True if a transitional node is playing;
 
 // Variables for visual placement of nodes:
 var rowDist = 110;				// Distance between rows
@@ -99,6 +100,7 @@ function createNetwork(){
 }
 
 
+// Function to be executed when the Play button is pressed:
 function play(){
 	// Removes loading screen:
 	document.getElementById('loading-screen').remove();
@@ -108,28 +110,41 @@ function play(){
 	}, 700);
 }
 
+// Main recurring function, being called every keyframe:
 function fire(){
 	// Checks if next iteration of SER should occur:
-	if(backings[currentGenre].seek() >= serInterval*currentPhrase){
-		console.log("REVERTING! Seek is " + backings[1].seek());
+	if(backings[currentGenre].seek() >= serInterval*serIterations){
+		// Checks if a transition has just taken place:
+		if (isTransitioning == true){
+			// Stops current backing track:
+			backings[currentGenre].stop();
+			// Switches genres:
+			_switchGenre();
+			// Resets state variable:
+			isTransitioning = false;
+			// Resets the number of SER iterations:
+			serIterations = 0;
+		}
 		// Checks if this is the first time running:
-		if (currentPhrase == 0){
+		if (playingNodes.length == 0){
 			// Run next round of SER without reverting edges:
 			runSER(true);
 		} else {
 			// Run next round of SER:
 			runSER(false);
 		}
-		// Increment current phrase count:
-		currentPhrase++;
+		// Increments current phrase count:
+		serIterations++;
 	}
+	// Repeat itself:
 	requestAnimationFrame(fire);
 }
 
 
 // Resumes execution of backing track when this window becomes active:
 window.addEventListener('focus', function(){
-	if (currentPhrase > 0){
+	// Impedes this from triggering during loading screens:
+	if (serIterations > 0){
 		// Checks if backing track was previously active:
 		if (backings[currentGenre].seek() != 0){
 			// Plays backing track:
@@ -145,7 +160,8 @@ window.addEventListener('focus', function(){
 });
 // Stops execution of backing track when this window becomes inactive:
 window.addEventListener('blur', function(){
-	if (currentPhrase > 0){
+	// Impedes this from triggering during loading screens:
+	if (serIterations > 0){
 		// Pauses backing track:
 		backings[currentGenre].pause();
 		// Pauses phrases:
@@ -263,9 +279,6 @@ function _initializeSongs(){
 			// Increments the counter of total songs loaded:
 			_incrementSongsLoaded();
 		});
-		backings[i].on("fade", function(){
-			backings[currentGenre].stop();
-		});
 	}
 }
 
@@ -323,10 +336,10 @@ function _playSongs(){
 			}
 			// If this is a transitional node, switch genres:
 			if (item.transitional == true){
-				// Stop previous backing track:
+				// Fades previous backing track:
 				backings[currentGenre].fade(backingVolume, 0, 200);
 				// Switch genres:
-				_switchGenre();
+				isTransitioning = true;
 			}
 		}
 	});
@@ -334,7 +347,6 @@ function _playSongs(){
 
 // Switches between genres. Blues is 1, jazz is 2:
 function _switchGenre(){
-	console.log("Swtiching from genre " + currentGenre);
 	// Checks if current genre is blues:
 	if (currentGenre == 1){
 		// Switches to jazz:
@@ -343,7 +355,6 @@ function _switchGenre(){
 		// Switches to blues:
 		currentGenre = 1;
 	}
-	console.log("Now Im at genre "+ currentGenre);
 }
 
 window.onload = function(){
