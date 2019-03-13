@@ -35,13 +35,13 @@ var nodes = new vis.DataSet([
 	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq03", offset: -2.45},
 	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq02", offset: -3.6},
 	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist, file:"antec03", offset: -2.7},
-	{id: 7, label: '7', x: 0, y: rowDist, transitional: true, file:"trans01", offset: -1.4},
+	{id: 7, label: '7', x: 0, y: rowDist, transitional: true, file:"trans01", offset: -1.45},
 	{id: 8, label: '8', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec01", offset: -1.9},
 	{id: 9, label: '9', x: 2*colDist + transitSpacing, y: rowDist+55, file:"jazz-conseq01", offset: -2.15},
 	{id: 10, label: '10', x: 2*colDist + transitSpacing, y: rowDist-55, file:"jazz-conseq02", offset: -1.8},
 	{id: 11, label: '11', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", offset: -1.5},
 	{id: 12, label: '12', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"jazz-conseq03", offset: -2.95},
-	{id: 13, label: '13', x: 2*colDist + transitSpacing, y: -rowDist},
+	{id: 13, label: '13', x: 2*colDist + transitSpacing, y: -rowDist, file:"jazz-conseq04", offset: -2.95},
 	{id: 14, label: '14', x: colDist + transitSpacing, y: -rowDist},
 	{id: 15, label: '15', x: 0, y: -rowDist, transitional: true}
 ]);
@@ -289,7 +289,7 @@ function _incrementSongsLoaded(){
 	// Updates songs loaded visual count:
 	document.getElementById("songs-loaded").innerHTML = songsLoaded;
 	// Checks if all songs have been loaded:
-	if (songsLoaded == 14){
+	if (songsLoaded == 15){
 		// Display Play button after a few seconds:
 		setTimeout(function(){
 			// Creates play button:
