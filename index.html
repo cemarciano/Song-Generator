@@ -18,7 +18,22 @@
 			<span>Loading </span><span id="songs-loaded">0</span><span>/15 music assets...</span>
 		</div>
 	</div>
-	<div id="mynetwork"></div>
+	<div id="main-network"></div>
+	<div id="borders"></div>
+	<div id="options-menu">
+		<span id="header">Menu</span>
+		<div id="interval">
+			<span>SER Interval (s): </span>
+			<span id="interval-value">??</span>
+		</div>
+		<button onclick="toggleBorders();">Toggle Borders</button>
+		<div id="scale">
+			<button onclick="decreaseScale();">-</button>
+			<span>Scale</span>
+			<button onclick="increaseScale();">+</button>
+		</div>
+		<div id="margin"></div>
+	</div>
 	<pre id="eventSpan"></pre>
 	<script type="text/javascript" src="graph.js"></script>
 </body>

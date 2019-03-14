@@ -1,13 +1,20 @@
-var network, data;
-var options = {
+var network, bordersNetwork;			// Network objects
+var data, bordersData;					// Networks data
+var container, borders;					// Networks DOM object
+var options = {							// Networks initialization options
 	layout:{randomSeed:30},
-	physics: {enabled: false}
+	physics: {enabled: false},
+	interaction: {
+		dragNodes: false,
+		dragView: false,
+		zoomView: false
+	},
+	autoResize: true
 };
 var nodeColor = "#ffffff";				// Background color of non-sink nodes
 var nodeFontColor = "#000000";			// Font color of non-sink nodes
 var sinkColor = "#000000";				// Background color of sink nodes
 var sinkFontColor = "#ffffff";			// Font color of sink nodes
-var container;							// Network DOM object
 var music = [];							// Music object for each node
 var backings = [undefined,undefined];	// Array of backing tracks
 var backing;							// Backing track object
@@ -19,8 +26,9 @@ var backingVolume = 1;					// Volume for backing track
 var songsLoaded = 0;					// Counter of how many tracks have been loaded
 var currentGenre = 1;					// Starting genre. 1 is blues, 2 is jazz
 var serIterations = 0;					// Gets incremented by 1 everytime SER iterates
-var playingNodes = [];					// Array of indexes of nodes being played;
-var isTransitioning = false;			// True if a transitional node is playing;
+var playingNodes = [];					// Array of indexes of nodes being played
+var isTransitioning = false;			// True if a transitional node is playing
+var currentScale = 1.33;				// Current scaling for network size
 
 // Variables for visual placement of nodes:
 var rowDist = 110;				// Distance between rows
@@ -29,21 +37,21 @@ var transitSpacing = 30;		// Extra distance from central transitional nodes
 
 // create an array with nodes (offset measured in seconds)
 var nodes = new vis.DataSet([
-	{id: 1, label: '1', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", offset: -0.6},
-	{id: 2, label: '2', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01", offset: -0.33},
-	{id: 3, label: '3', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02", offset: -1},
-	{id: 4, label: '4', x: -(3.4*colDist + transitSpacing), y: -rowDist-15, file:"conseq03", offset: -2.45},
-	{id: 5, label: '5', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq02", offset: -3.6},
-	{id: 6, label: '6', x: -(colDist + transitSpacing), y: rowDist, file:"antec03", offset: -2.7},
-	{id: 7, label: '7', x: 0, y: rowDist, transitional: true, file:"trans01", offset: -1.45},
-	{id: 8, label: '8', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec01", offset: -1.9},
-	{id: 9, label: '9', x: 2*colDist + transitSpacing, y: rowDist+55, file:"jazz-conseq01", offset: -2.15},
-	{id: 10, label: '10', x: 2*colDist + transitSpacing, y: rowDist-55, file:"jazz-conseq02", offset: -1.8},
-	{id: 11, label: '11', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", offset: -1.5},
-	{id: 12, label: '12', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"jazz-conseq03", offset: -2.95},
-	{id: 13, label: '13', x: 2*colDist + transitSpacing, y: -rowDist, file:"jazz-conseq04", offset: -2.95},
-	{id: 14, label: '14', x: colDist + transitSpacing, y: -rowDist},
-	{id: 15, label: '15', x: 0, y: -rowDist, transitional: true}
+	{id: 1, label: 'A', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", offset: -0.6},
+	{id: 2, label: 'C', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01", offset: -0.33},
+	{id: 3, label: 'A', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02", offset: -1},
+	{id: 4, label: 'C', x: -(3.4*colDist + transitSpacing), y: -rowDist, file:"conseq03", offset: -2.45},
+	{id: 5, label: 'C', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq02", offset: -3.6},
+	{id: 6, label: 'A', x: -(colDist + transitSpacing), y: rowDist, file:"antec03", offset: -2.7},
+	{id: 7, label: 'T', x: 0, y: rowDist, transitional: true, file:"trans01", offset: -1.45},
+	{id: 8, label: 'A', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec01", offset: -1.9},
+	{id: 9, label: 'C', x: 2*colDist + transitSpacing, y: rowDist+55, file:"jazz-conseq01", offset: -2.15},
+	{id: 10, label: 'C', x: 2*colDist + transitSpacing, y: rowDist-55, file:"jazz-conseq02", offset: -1.8},
+	{id: 11, label: 'A', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", offset: -1.5},
+	{id: 12, label: 'C', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"jazz-conseq03", offset: -2.95},
+	{id: 13, label: 'C', x: 2*colDist + transitSpacing, y: -rowDist, file:"jazz-conseq04", offset: -2.95},
+	{id: 14, label: 'A', x: colDist + transitSpacing, y: -rowDist},
+	{id: 15, label: 'T', x: 0, y: -rowDist, transitional: true}
 ]);
 
 
@@ -71,6 +79,14 @@ var edges = new vis.DataSet([
 
 ]);
 
+// Borders (blues, jazz, transit):
+var borderNodes = new vis.DataSet([
+	{id: 1, image: "border1.png", x: 0, y: 0, shape: "image", size: 62.5},
+	{id: 12, image: "border2.png", x: -(2.1*colDist + transitSpacing), y: 0, shape: "image", size: 163},
+	{id: 13, image: "border3.png", x: (1.92*colDist + transitSpacing), y: rowDist/5, shape: "image", size: 185}
+]);
+var borderEdges = new vis.DataSet([]);
+
 
 
 
@@ -81,14 +97,22 @@ function createNetwork(){
 		item.arrows = "to";
 		edges.update(item);
 	});
+	// Creates borders:
+	borders = document.getElementById('borders');
+	bordersData = {
+		nodes: borderNodes,
+		edges: borderEdges
+	};
+	bordersNetwork = new vis.Network(borders, bordersData, options);
+	bordersNetwork.moveTo({scale: currentScale});
 	// Creates network:
-	container = document.getElementById('mynetwork');
+	container = document.getElementById('main-network');
 	data = {
 		nodes: nodes,
 		edges: edges
 	};
 	network = new vis.Network(container, data, options);
-	network.moveTo({scale: 1.4});
+	network.moveTo({scale: currentScale});
 	// Updates who is sink:
 	_updateSinks();
 	// Initializes sound files:
@@ -135,6 +159,8 @@ function fire(){
 		}
 		// Increments current phrase count:
 		serIterations++;
+		// Updates DOM interval value:
+		document.getElementById("interval-value").innerHTML = serInterval[currentGenre];
 	}
 	// Repeat itself:
 	requestAnimationFrame(fire);
@@ -355,6 +381,31 @@ function _switchGenre(){
 		// Switches to blues:
 		currentGenre = 1;
 	}
+}
+
+// Toggles border (blues, jazz, transit) overlay:
+function toggleBorders(){
+	borderNodes.forEach(function(item){
+		if (item.hidden == true){
+			item.hidden = false;
+		} else {
+			item.hidden = true;
+		}
+		borderNodes.update(item);
+	});
+}
+
+function increaseScale(){
+	currentScale += 0.1;
+	network.moveTo({scale: currentScale});
+	bordersNetwork.moveTo({scale: currentScale});
+}
+
+
+function decreaseScale(){
+	currentScale -= 0.1;
+	network.moveTo({scale: currentScale});
+	bordersNetwork.moveTo({scale: currentScale});
 }
 
 window.onload = function(){
