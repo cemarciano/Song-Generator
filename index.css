@@ -49,12 +49,16 @@
     margin-right: auto;
 }
 
-#scale, #interval {
+#scale, #interval, #note-count {
 	text-align: center;
 }
 
-#scale button, #scale span, #interval span{
+#scale button, #scale span, #interval span, #note-count span{
 	display: inline;
+}
+
+#note-count {
+	margin-top: 10px;
 }
 
 #options-menu #margin {

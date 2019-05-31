@@ -19,7 +19,7 @@ var music = [];							// Music object for each node
 var backings = [undefined,undefined];	// Array of backing tracks
 var backing;							// Backing track object
 var musicFadeOut = 400;					// Music fade (ms)
-var serInterval = [null, 4.815, 6.430];		// Waiting interval before next edge reversal (ms) sorted by genre (first is blues, second is jazz)
+var serInterval = [null, 4.815, 6.430];	// Waiting interval before next edge reversal (ms) sorted by genre (first is blues, second is jazz)
 var poliphonyVolume = 0.55;				// Volume for poliphony tracks
 var phraseVolume = 0.9;					// Volume for single phrases
 var backingVolume = 1;					// Volume for backing track
@@ -37,25 +37,25 @@ var transitSpacing = 30;		// Extra distance from central transitional nodes
 
 // create an array with nodes (offset measured in seconds)
 var nodes = new vis.DataSet([
-	{id: 1, label: 'A', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", offset: -0.6},
-	{id: 2, label: 'C', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01", offset: -0.33},
-	{id: 3, label: 'A', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec02", offset: -1},
-	{id: 4, label: 'C', x: -(3.4*colDist + transitSpacing), y: -rowDist, file:"conseq03", offset: -2.45},
-	{id: 5, label: 'C', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq02", offset: -3.6},
-	{id: 6, label: 'A', x: -(colDist + transitSpacing), y: rowDist, file:"antec03", offset: -2.7},
-	{id: 7, label: 'T', x: 0, y: rowDist, transitional: true, file:"trans01", offset: -1.45},
-	{id: 8, label: 'A', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec01", offset: -1.9},
-	{id: 9, label: 'C', x: 2*colDist + transitSpacing, y: rowDist+55, file:"jazz-conseq01", offset: -2.15},
-	{id: 10, label: 'C', x: 2*colDist + transitSpacing, y: rowDist-55, file:"jazz-conseq02", offset: -1.8},
-	{id: 11, label: 'A', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", offset: -1.5},
-	{id: 12, label: 'C', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"jazz-conseq03", offset: -2.95},
-	{id: 13, label: 'C', x: 2*colDist + transitSpacing, y: -rowDist, file:"jazz-conseq04", offset: -2.95},
-	{id: 14, label: 'A', x: colDist + transitSpacing, y: -rowDist},
-	{id: 15, label: 'T', x: 0, y: -rowDist, transitional: true}
+	{id: 1, label: 'A', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", noteCount: 8, offset: -0.6},
+	{id: 2, label: 'C', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01", noteCount: 12, offset: -0.33},
+	{id: 3, label: 'A', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec03", noteCount: 11, offset: -1.46},
+	{id: 4, label: 'C', x: -(3.4*colDist + transitSpacing), y: -rowDist, file:"conseq02", noteCount: 14, offset: -3.6},
+	{id: 5, label: 'C', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq03", noteCount: 8, offset: -2.45},
+	{id: 6, label: 'A', x: -(colDist + transitSpacing), y: rowDist, file:"antec02", noteCount: 1, offset: -1},
+	{id: 7, label: 'T', x: 0, y: rowDist, transitional: true, file:"trans01", noteCount: "N/A", offset: -1.4},
+	{id: 8, label: 'A', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec01", noteCount: 12, offset: -1.9},
+	{id: 9, label: 'C', x: 2*colDist + transitSpacing, y: rowDist+55, file:"jazz-conseq01", noteCount: 6, offset: -2.15},
+	{id: 10, label: 'C', x: 2*colDist + transitSpacing, y: rowDist-55, file:"jazz-conseq02", noteCount: 6, offset: -1.8},
+	{id: 11, label: 'A', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", noteCount: 16, offset: -1.5},
+	{id: 12, label: 'C', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"jazz-conseq03", noteCount: 14, offset: -2.95},
+	{id: 13, label: 'C', x: 2*colDist + transitSpacing, y: -rowDist, file:"jazz-conseq04", noteCount: 14, offset: -2.95},
+	{id: 14, label: 'A', x: colDist + transitSpacing, y: -rowDist, file:"jazz-antec03", noteCount: 10, offset: 0},
+	{id: 15, label: 'T', x: 0, y: -rowDist, transitional: true, file:"trans02", noteCount: "N/A", offset: 0}
 ]);
 
 
-// create an array with edges
+// Create an array with edges:
 var edges = new vis.DataSet([
 	{from: 15, to: 1},
 	{from: 2, to: 1},
@@ -345,6 +345,8 @@ function _playSongs(){
 	// Resets id of nodes being played:
 	playingNodes = [];
 	let firstPlayed = true;
+	// Resets visual indication of notes:
+	document.getElementById('note-count-value').textContent = "";
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
@@ -352,6 +354,12 @@ function _playSongs(){
 			music[item.id].seek(-1*item.offset);
 			music[item.id].play();
 			playingNodes.push(item.id);
+			// Adds note count to menu. Checks if this is the first text being added:
+			if (playingNodes.length == 1){
+				document.getElementById('note-count-value').textContent += item.noteCount;
+			} else {
+				document.getElementById('note-count-value').textContent += ("; " + item.noteCount);
+			}
 			// If this is the first sink playing in this orientation:
 			if (firstPlayed){
 				// Make it stand out:
