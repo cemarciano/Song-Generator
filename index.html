@@ -13,10 +13,20 @@
 		"12 Bar Blues Backing Track in A Major | 100 bpm" under Creative Commons License 2.0 (<a href="https://www.youtube.com/watch?v=93IVcKPCzq0">link</a>)<br>
 		"Jazz Swing Backing Track - 2-5-1 - A major" under Creative Commons License 2.0 (<a href="https://www.youtube.com/watch?v=qg9NoqzyBq4">link</a>)<br>
 		This work is part of a research paper titled "Minimum Concurrency for Assembling Computer Music" (<a href="https://cemarciano.github.io/static/documents/inoc-2019-paper.pdf">link</a>)<br>
-		Created with <a href="http://visjs.org/">VisJS</a> and <a href="https://howlerjs.com/">HowlerJS</a>. Source code is available <a href="https://github.com/cemarciano/Song-Generator">here</a> under GPLv3.</span>
+		Created with <a href="http://visjs.org/">VisJS</a> and <a href="https://howlerjs.com/">HowlerJS</a>. Source code is available <a href="https://github.com/cemarciano/Song-Generator">here</a> under the GPLv3 license.</span>
 	<div id="loading-screen">
-		<div>
+		<div id="loading-screen-text">
 			<span>Loading </span><span id="songs-loaded">0</span><span>/17 music assets...</span>
+		</div>
+		<div id="play-buttons-div">
+			<div class="btn" onClick="play(1)">
+				<span class="play-text">Play</span>
+				<span class="direction-text">(counterclockwise direction)</span>
+			</div>
+			<div class="btn" onClick="play(2)">
+				<span class="play-text">Play</span>
+				<span class="direction-text">(clockwise direction)</span>
+			</div>
 		</div>
 	</div>
 	<div id="main-network"></div>

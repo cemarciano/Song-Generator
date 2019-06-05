@@ -1,5 +1,5 @@
 var network, bordersNetwork;			// Network objects
-var data, bordersData;					// Networks data
+var data, bordersData, edges;			// Networks data
 var container, borders;					// Networks DOM object
 var options = {							// Networks initialization options
 	layout:{randomSeed:30},
@@ -24,11 +24,13 @@ var poliphonyVolume = 0.55;				// Volume for poliphony tracks
 var phraseVolume = 0.9;					// Volume for single phrases
 var backingVolume = 1;					// Volume for backing track
 var songsLoaded = 0;					// Counter of how many tracks have been loaded
-var currentGenre = 1;					// Starting genre. 1 is blues, 2 is jazz
+var currentGenre;						// Starting genre. 1 is blues, 2 is jazz. Defined by play function
 var serIterations = 0;					// Gets incremented by 1 everytime SER iterates
 var playingNodes = [];					// Array of indexes of nodes being played
 var isTransitioning = false;			// True if a transitional node is playing
 var currentScale = 1.33;				// Current scaling for network size
+var transitionOffset = 0.2;				// When transitioning genres, a delay is genrated. This will add to a node's offset to correct it
+var transitRate = 1;					// This modifies transition play rates so that they may be played outside their original genres
 
 // Variables for visual placement of nodes:
 var rowDist = 110;				// Distance between rows
@@ -37,26 +39,26 @@ var transitSpacing = 30;		// Extra distance from central transitional nodes
 
 // create an array with nodes (offset measured in seconds)
 var nodes = new vis.DataSet([
-	{id: 1, label: 'A', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", noteCount: 8, offset: -0.6},
+	{id: 1, label: 'A', x: -(colDist + transitSpacing), y: -rowDist, file:"antec01", noteCount: 8, offset: -0.8},
 	{id: 2, label: 'C', x: -(2*colDist + transitSpacing), y: -rowDist, file:"conseq01", noteCount: 12, offset: -0.33},
 	{id: 3, label: 'A', x: -(2.8*colDist + transitSpacing), y: 0, file:"antec03", noteCount: 11, offset: -1.49},
 	{id: 4, label: 'C', x: -(3.4*colDist + transitSpacing), y: -rowDist, file:"conseq02", noteCount: 14, offset: -3.6},
 	{id: 5, label: 'C', x: -(2*colDist + transitSpacing), y: rowDist, file:"conseq03", noteCount: 8, offset: -2.45},
 	{id: 6, label: 'A', x: -(colDist + transitSpacing), y: rowDist, file:"antec02", noteCount: 1, offset: -1},
-	{id: 7, label: 'T', x: 0, y: rowDist, transitional: true, file:"trans01", noteCount: "N/A", offset: -1.43},
-	{id: 8, label: 'A', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec03", noteCount: 7, offset: -1.99},
+	{id: 7, label: 'T', x: 0, y: rowDist, transitional: true, file:"trans01", noteCount: "N/A", offset: -1.43, genre: 1},
+	{id: 8, label: 'A', x: colDist + transitSpacing, y: rowDist, file:"jazz-antec03", noteCount: 7, offset: -2.19},
 	{id: 9, label: 'C', x: 2*colDist + transitSpacing, y: rowDist+55, file:"jazz-conseq01", noteCount: 6, offset: -2.15},
 	{id: 10, label: 'C', x: 2*colDist + transitSpacing, y: rowDist-55, file:"jazz-conseq02", noteCount: 6, offset: -1.8},
-	{id: 11, label: 'A', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", noteCount: 16, offset: -1.55},
+	{id: 11, label: 'A', x: 3*colDist + transitSpacing, y: rowDist, file:"jazz-antec02", noteCount: 16, offset: -1.52},
 	{id: 12, label: 'C', x: 3*colDist + transitSpacing, y: -rowDist+80, file:"jazz-conseq03", noteCount: 14, offset: -2.95},
 	{id: 13, label: 'C', x: 2*colDist + transitSpacing, y: -rowDist, file:"jazz-conseq04", noteCount: 14, offset: -2.95},
 	{id: 14, label: 'A', x: colDist + transitSpacing, y: -rowDist, file:"jazz-antec01", noteCount: 12, offset: -2.1},
-	{id: 15, label: 'T', x: 0, y: -rowDist, transitional: true, file:"trans02", noteCount: "N/A", offset: -2.07}
+	{id: 15, label: 'T', x: 0, y: -rowDist, transitional: true, file:"trans02", noteCount: "N/A", offset: -2.07, genre: 2}
 ]);
 
 
-// Create an array with edges:
-var edges = new vis.DataSet([
+// Orient max cycle in the counterclockwise direction:
+var counterclockwiseEdges = new vis.DataSet([
 	{from: 15, to: 1},
 	{from: 2, to: 1},
 	{from: 5, to: 1},
@@ -79,6 +81,30 @@ var edges = new vis.DataSet([
 
 ]);
 
+// Orient max cycle in the clockwise direction:
+var clockwiseEdges = new vis.DataSet([
+	{from: 15, to: 1},
+	{from: 1, to: 2},
+	{from: 1, to: 5},
+	{from: 2, to: 3},
+	{from: 2, to: 6},
+	{from: 4, to: 3},
+	{from: 3, to: 5},
+	{from: 5, to: 6},
+	{from: 6, to: 7},
+	{from: 7, to: 8},
+	{from: 8, to: 9},
+	{from: 8, to: 10},
+	{from: 9, to: 11},
+	{from: 10, to: 11},
+	{from: 11, to: 12},
+	{from: 11, to: 13},
+	{from: 12, to: 14},
+	{from: 13, to: 14},
+	{from: 15, to: 14}
+
+]);
+
 // Borders (blues, jazz, transit):
 var borderNodes = new vis.DataSet([
 	{id: 1, image: "border1.png", x: 0, y: 0, shape: "image", size: 62.5},
@@ -92,11 +118,15 @@ var borderEdges = new vis.DataSet([]);
 
 // Startup function:
 function createNetwork(){
+	// Select the default set of edges to use:
+	edges = counterclockwiseEdges;
 	// Adds arrow information to edges:
 	edges.forEach(function(item){
 		item.arrows = "to";
 		edges.update(item);
 	});
+	// Updates node colors:
+	_updateColors();
 	// Creates borders:
 	borders = document.getElementById('borders');
 	bordersData = {
@@ -117,17 +147,31 @@ function createNetwork(){
 	_updateSinks();
 	// Initializes sound files:
 	_initializeSongs();
-	// Updates colors of nodes:
-	_updateColors();
-
 
 }
 
 
 // Function to be executed when the Play button is pressed:
-function play(){
+function play(genre){
 	// Removes loading screen:
 	document.getElementById('loading-screen').remove();
+	// Sets current genre:
+	currentGenre = genre;
+	// Adds arrow information to edges:
+	if (genre == 2){
+		edges = clockwiseEdges;
+		// Adds arrow information to edges:
+		edges.forEach(function(item){
+			item.arrows = "to";
+			edges.update(item);
+		});
+		network.setData({nodes:nodes, edges:edges});
+		network.moveTo({scale: currentScale});
+	}
+	// Updates who is sink:
+	_updateSinks();
+	// Updates node colors:
+	_updateColors();
 	// Perform first round of SER and play first songs:
 	setTimeout(function(){
 		requestAnimationFrame(fire);
@@ -137,7 +181,7 @@ function play(){
 // Main recurring function, being called every keyframe:
 function fire(){
 	// Checks if next iteration of SER should occur:
-	if(backings[currentGenre].seek() >= serInterval[currentGenre]*serIterations){
+	if(backings[currentGenre].seek() >= (serInterval[currentGenre]*(serIterations-1) + serInterval[currentGenre]*transitRate)){
 		// Checks if a transition has just taken place:
 		if (isTransitioning == true){
 			// Stops current backing track:
@@ -146,6 +190,8 @@ function fire(){
 			_switchGenre();
 			// Resets state variable:
 			isTransitioning = false;
+			// Resets transition rate:
+			transitRate = 1;
 			// Resets the number of SER iterations:
 			serIterations = 0;
 		}
@@ -316,19 +362,17 @@ function _incrementSongsLoaded(){
 	document.getElementById("songs-loaded").innerHTML = songsLoaded;
 	// Checks if all songs have been loaded:
 	if (songsLoaded == 17){
-		// Display Play button after a few seconds:
+		// Display Play buttons after a few seconds:
 		setTimeout(function(){
-			// Creates play button:
-			var playButton = document.createElement('div');
-			playButton.className = "btn";
-			playButton.innerHTML = "Play";
-			playButton.onclick = play;
 			// Fetches loading screen:
-			var loadingScreen = document.getElementById('loading-screen');
+			var loadingScreenText = document.getElementById('loading-screen-text');
 			// Removes Loading... text:
-			loadingScreen.innerHTML = "";
-			// Appends play button:
-			loadingScreen.appendChild(playButton);
+			loadingScreenText.innerHTML = "";
+			// Displays play buttons:
+			var playButtons = document.getElementsByClassName("btn");
+			for (var i = 0; i < playButtons.length; i++){
+				playButtons[i].style.display = "block";
+			}
 		}, 900);
 	}
 }
@@ -350,8 +394,8 @@ function _playSongs(){
 	// Play sound of sinks:
 	nodes.forEach(function(item){
 		if (item.sink == true){
-			// Seek and play according to offset:
-			music[item.id].seek(-1*item.offset);
+			// Seek and play according to offset. If node is the first in this genre, also adds an additional offset:
+			music[item.id].seek(-(1*item.offset + transitionOffset));
 			music[item.id].play();
 			playingNodes.push(item.id);
 			// Adds note count to menu. Checks if this is the first text being added:
@@ -372,11 +416,15 @@ function _playSongs(){
 			if (item.transitional == true){
 				// Fades previous backing track:
 				backings[currentGenre].fade(backingVolume, 0, 200);
+				// Calculates the rate at which it should be played, according to the current genre:
+				transitRate = serInterval[item.genre] / serInterval[currentGenre];
 				// Switch genres:
 				isTransitioning = true;
 			}
 		}
 	});
+	// Resets transition offset accordingly:
+	transitionOffset = 0;
 }
 
 // Switches between genres. Blues is 1, jazz is 2:
@@ -389,6 +437,8 @@ function _switchGenre(){
 		// Switches to blues:
 		currentGenre = 1;
 	}
+	// Signals that a additional waiting time is needed for the next node:
+	transitionOffset = 0.2;
 }
 
 // Toggles border (blues, jazz, transit) overlay:
